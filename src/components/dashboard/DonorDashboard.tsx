@@ -43,12 +43,12 @@ export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
   const fetchPendingRequests = async () => {
     const { data } = await supabase
       .from("blood_requests")
-      .select("*, patient:patient_id(full_name, phone)")
+      .select("*, patient:profiles!blood_requests_patient_id_fkey(full_name, phone)")
       .eq("donor_id", profile.id)
       .eq("status", "pending")
       .order("created_at", { ascending: false });
     
-    if (data) setRequests(data as RequestWithPatient[]);
+    if (data) setRequests(data as unknown as RequestWithPatient[]);
   };
 
   const toggleAvailability = async () => {
