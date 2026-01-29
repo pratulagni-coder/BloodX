@@ -6,6 +6,7 @@ import { DonorDashboard } from "@/components/dashboard/DonorDashboard";
 import { PatientDashboard } from "@/components/dashboard/PatientDashboard";
 import { Navbar } from "@/components/layout/Navbar";
 import { Loader2 } from "lucide-react";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import type { Database } from "@/integrations/supabase/types";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -20,6 +21,21 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileWithArea | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Real-time notifications with sound
+  useRealtimeNotifications({
+    profileId: profile?.id || null,
+    isDonor: profile?.is_donor ?? false,
+    onNewRequest: () => {
+      // Refresh dashboard when new request comes in
+      setRefreshKey(prev => prev + 1);
+    },
+    onRequestUpdate: () => {
+      // Refresh dashboard when request status changes
+      setRefreshKey(prev => prev + 1);
+    },
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -31,6 +47,13 @@ const Dashboard = () => {
       fetchProfile();
     }
   }, [user, authLoading, navigate]);
+
+  // Re-fetch when refreshKey changes (from realtime updates)
+  useEffect(() => {
+    if (profile && refreshKey > 0) {
+      fetchProfile();
+    }
+  }, [refreshKey]);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -75,7 +98,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Navbar profileId={profile.id} />
       <main className="pt-20">
         {profile.is_donor ? (
           <DonorDashboard profile={profile} onProfileUpdate={fetchProfile} />
