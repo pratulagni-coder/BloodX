@@ -1,10 +1,9 @@
-import { forwardRef } from "react";
 import { Heart, Droplets } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export const Footer = forwardRef<HTMLElement>((props, ref) => {
+export const Footer = () => {
   return (
-    <footer ref={ref} className="py-12 bg-warm-beige border-t border-border">
+    <footer className="py-12 bg-warm-beige border-t border-border">
       <div className="container px-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           {/* Logo */}
@@ -50,6 +49,4 @@ export const Footer = forwardRef<HTMLElement>((props, ref) => {
       </div>
     </footer>
   );
-});
-
-Footer.displayName = "Footer";
+};
