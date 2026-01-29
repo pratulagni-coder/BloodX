@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DonorSearchSection } from "@/components/donor/DonorSearchSection";
+import { ContactsManager } from "@/components/donor/ContactsManager";
 import type { ProfileWithArea } from "@/pages/Dashboard";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -361,6 +363,12 @@ export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
             </div>
           )}
         </motion.div>
+
+        {/* Contacts Manager */}
+        <ContactsManager profileId={profile.id} />
+
+        {/* District Search for Patients */}
+        <DonorSearchSection profileId={profile.id} />
 
         {/* Disclaimer */}
         <div className="mt-8 p-4 rounded-2xl bg-blood-light border border-blood/20">
