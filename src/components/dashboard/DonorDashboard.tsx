@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Heart, MapPin, Bell, Calendar, ToggleLeft, ToggleRight, Check, X, Droplets } from "lucide-react";
+import { Heart, MapPin, Bell, Calendar, ToggleLeft, ToggleRight, Check, X, Droplets, Phone, Eye, EyeOff, Shield, FileText, Droplet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { ProfileWithArea } from "@/pages/Dashboard";
@@ -25,6 +26,7 @@ interface RequestWithPatient extends BloodRequest {
 
 export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
   const [isAvailable, setIsAvailable] = useState(profile.is_available ?? true);
+  const [visibility, setVisibility] = useState((profile as any).visibility || "everyone");
   const [areas, setAreas] = useState<Area[]>([]);
   const [selectedArea, setSelectedArea] = useState(profile.area_id || "");
   const [requests, setRequests] = useState<RequestWithPatient[]>([]);
@@ -49,6 +51,21 @@ export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
       .order("created_at", { ascending: false });
     
     if (data) setRequests(data as unknown as RequestWithPatient[]);
+  };
+
+  const updateVisibility = async (newVisibility: string) => {
+    setVisibility(newVisibility);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ visibility: newVisibility })
+      .eq("id", profile.id);
+
+    if (error) {
+      toast.error("Failed to update visibility");
+    } else {
+      toast.success(newVisibility === "everyone" ? "You are now visible to everyone" : "Now visible only to your contacts");
+      onProfileUpdate();
+    }
   };
 
   const toggleAvailability = async () => {
@@ -175,10 +192,10 @@ export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
               </div>
             </div>
             <Select value={selectedArea} onValueChange={updateArea}>
-              <SelectTrigger className="h-12 rounded-xl">
+              <SelectTrigger className="h-12 rounded-xl bg-background">
                 <SelectValue placeholder="Select your area" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover border border-border z-50">
                 {areas.map((area) => (
                   <SelectItem key={area.id} value={area.id}>
                     {area.name}
@@ -186,6 +203,44 @@ export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
                 ))}
               </SelectContent>
             </Select>
+          </motion.div>
+
+          {/* Visibility Settings Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="bg-card rounded-3xl p-6 shadow-card border border-border"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-accent flex items-center justify-center">
+                <Shield className="w-6 h-6 text-accent-foreground" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Visibility</h3>
+                <p className="text-sm text-muted-foreground">Who can find you</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant={visibility === "everyone" ? "default" : "outline"}
+                size="sm"
+                onClick={() => updateVisibility("everyone")}
+                className="flex items-center gap-2"
+              >
+                <Eye className="w-4 h-4" />
+                Everyone
+              </Button>
+              <Button
+                variant={visibility === "contacts_only" ? "default" : "outline"}
+                size="sm"
+                onClick={() => updateVisibility("contacts_only")}
+                className="flex items-center gap-2"
+              >
+                <EyeOff className="w-4 h-4" />
+                Contacts
+              </Button>
+            </div>
           </motion.div>
 
           {/* Last Donation Card */}
@@ -247,8 +302,8 @@ export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
                   className="bg-card rounded-2xl p-6 shadow-card border border-border"
                 >
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           request.urgency === "critical" ? "urgency-critical" :
                           request.urgency === "urgent" ? "urgency-urgent" : "urgency-normal"
@@ -256,6 +311,12 @@ export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
                           {request.urgency?.toUpperCase()}
                         </span>
                         <span className="text-blood font-bold">{request.blood_group}</span>
+                        {request.units_required && request.units_required > 1 && (
+                          <Badge variant="secondary" className="flex items-center gap-1">
+                            <Droplet className="w-3 h-3" />
+                            {request.units_required} units
+                          </Badge>
+                        )}
                       </div>
                       <p className="font-semibold text-foreground">
                         {request.patient?.full_name || "Anonymous"}
@@ -265,6 +326,17 @@ export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
                       )}
                       {request.message && (
                         <p className="text-sm text-muted-foreground mt-2">{request.message}</p>
+                      )}
+                      {request.medical_report_url && (
+                        <a
+                          href={request.medical_report_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 mt-2 text-sm text-primary hover:underline"
+                        >
+                          <FileText className="w-4 h-4" />
+                          View Medical Report
+                        </a>
                       )}
                     </div>
                     <div className="flex gap-2">

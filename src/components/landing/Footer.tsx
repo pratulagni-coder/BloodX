@@ -11,7 +11,7 @@ export const Footer = () => {
             <div className="w-10 h-10 rounded-xl blood-gradient flex items-center justify-center">
               <Droplets className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">BloodConnect</span>
+            <span className="text-xl font-bold text-foreground">BloodX</span>
           </Link>
 
           {/* Links */}
@@ -41,7 +41,7 @@ export const Footer = () => {
         {/* Disclaimer */}
         <div className="mt-8 pt-8 border-t border-border">
           <p className="text-center text-xs text-muted-foreground max-w-2xl mx-auto">
-            <strong>Important:</strong> BloodConnect is a platform for connecting donors with patients. 
+            <strong>Important:</strong> BloodX is a platform for connecting donors with patients. 
             All blood donations must be performed at registered blood banks with proper screening. 
             We do not facilitate or encourage any form of blood donation outside of official medical facilities.
           </p>

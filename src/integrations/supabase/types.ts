@@ -43,9 +43,11 @@ export type Database = {
           donor_id: string | null
           hospital_name: string | null
           id: string
+          medical_report_url: string | null
           message: string | null
           patient_id: string
           status: Database["public"]["Enums"]["request_status"] | null
+          units_required: number | null
           updated_at: string | null
           urgency: Database["public"]["Enums"]["urgency_level"] | null
         }
@@ -56,9 +58,11 @@ export type Database = {
           donor_id?: string | null
           hospital_name?: string | null
           id?: string
+          medical_report_url?: string | null
           message?: string | null
           patient_id: string
           status?: Database["public"]["Enums"]["request_status"] | null
+          units_required?: number | null
           updated_at?: string | null
           urgency?: Database["public"]["Enums"]["urgency_level"] | null
         }
@@ -69,9 +73,11 @@ export type Database = {
           donor_id?: string | null
           hospital_name?: string | null
           id?: string
+          medical_report_url?: string | null
           message?: string | null
           patient_id?: string
           status?: Database["public"]["Enums"]["request_status"] | null
+          units_required?: number | null
           updated_at?: string | null
           urgency?: Database["public"]["Enums"]["urgency_level"] | null
         }
@@ -95,6 +101,35 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      districts: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          state_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          state_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          state_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "districts_state_id_fkey"
+            columns: ["state_id"]
+            isOneToOne: false
+            referencedRelation: "states"
             referencedColumns: ["id"]
           },
         ]
@@ -152,40 +187,61 @@ export type Database = {
           area_id: string | null
           blood_group: Database["public"]["Enums"]["blood_group"]
           created_at: string | null
+          district: string | null
           full_name: string
+          has_medical_condition: boolean | null
           id: string
           is_available: boolean | null
           is_donor: boolean | null
+          is_on_medication: boolean | null
           last_donation_date: string | null
+          medical_condition_details: string | null
+          medication_details: string | null
           phone: string | null
+          state: string | null
           updated_at: string | null
           user_id: string
+          visibility: string | null
         }
         Insert: {
           area_id?: string | null
           blood_group: Database["public"]["Enums"]["blood_group"]
           created_at?: string | null
+          district?: string | null
           full_name: string
+          has_medical_condition?: boolean | null
           id?: string
           is_available?: boolean | null
           is_donor?: boolean | null
+          is_on_medication?: boolean | null
           last_donation_date?: string | null
+          medical_condition_details?: string | null
+          medication_details?: string | null
           phone?: string | null
+          state?: string | null
           updated_at?: string | null
           user_id: string
+          visibility?: string | null
         }
         Update: {
           area_id?: string | null
           blood_group?: Database["public"]["Enums"]["blood_group"]
           created_at?: string | null
+          district?: string | null
           full_name?: string
+          has_medical_condition?: boolean | null
           id?: string
           is_available?: boolean | null
           is_donor?: boolean | null
+          is_on_medication?: boolean | null
           last_donation_date?: string | null
+          medical_condition_details?: string | null
+          medication_details?: string | null
           phone?: string | null
+          state?: string | null
           updated_at?: string | null
           user_id?: string
+          visibility?: string | null
         }
         Relationships: [
           {
@@ -196,6 +252,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      states: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       user_contacts: {
         Row: {
