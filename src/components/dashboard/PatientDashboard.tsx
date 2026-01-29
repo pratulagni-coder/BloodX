@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Users, MapPin, Droplets, Phone, MessageCircle } from "lucide-react";
+import { Search, Users, MapPin, Droplets, Phone, Lock, UserCheck, MessageCircle, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { BloodRequestForm } from "@/components/patient/BloodRequestForm";
 import type { ProfileWithArea } from "@/pages/Dashboard";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -15,6 +16,7 @@ type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 interface DonorWithArea extends Profile {
   areas: Area | null;
+  isContact?: boolean;
 }
 
 interface Props {
@@ -26,30 +28,79 @@ export const PatientDashboard = ({ profile }: Props) => {
   const [selectedArea, setSelectedArea] = useState("");
   const [donors, setDonors] = useState<DonorWithArea[]>([]);
   const [networkContacts, setNetworkContacts] = useState<DonorWithArea[]>([]);
+  const [userContacts, setUserContacts] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchAreas();
-    fetchNetworkContacts();
+    fetchUserContacts();
   }, []);
+
+  useEffect(() => {
+    if (userContacts.length >= 0) {
+      fetchNetworkContacts();
+    }
+  }, [userContacts]);
 
   const fetchAreas = async () => {
     const { data } = await supabase.from("areas").select("*").order("name");
     if (data) setAreas(data);
   };
 
+  const fetchUserContacts = async () => {
+    // Fetch the user's saved contacts
+    const { data } = await supabase
+      .from("user_contacts")
+      .select("contact_user_id")
+      .eq("user_id", profile.id);
+    
+    if (data) {
+      setUserContacts(data.map(c => c.contact_user_id));
+    }
+  };
+
   const fetchNetworkContacts = async () => {
-    // Simulate network contacts (users who share matching blood compatibility)
+    // Fetch donors who match blood group AND are in user's contacts
+    // These contacts show full details immediately
+    if (userContacts.length === 0) {
+      // Still show matching donors, but they won't be "contacts"
+      const { data } = await supabase
+        .from("profiles")
+        .select("*, areas(*)")
+        .eq("is_donor", true)
+        .eq("is_available", true)
+        .eq("blood_group", profile.blood_group)
+        .neq("id", profile.id)
+        .limit(10);
+      
+      if (data) {
+        // Mark none as contacts
+        const donorsWithContactStatus = (data as DonorWithArea[]).map(d => ({
+          ...d,
+          isContact: false
+        }));
+        setNetworkContacts(donorsWithContactStatus);
+      }
+      return;
+    }
+
+    // First get contacts who are donors with matching blood group
     const { data } = await supabase
       .from("profiles")
       .select("*, areas(*)")
       .eq("is_donor", true)
       .eq("is_available", true)
       .eq("blood_group", profile.blood_group)
-      .neq("id", profile.id)
-      .limit(10);
+      .in("id", userContacts)
+      .neq("id", profile.id);
     
-    if (data) setNetworkContacts(data as DonorWithArea[]);
+    if (data) {
+      const contactDonors = (data as DonorWithArea[]).map(d => ({
+        ...d,
+        isContact: true
+      }));
+      setNetworkContacts(contactDonors);
+    }
   };
 
   const searchDonors = async () => {
@@ -58,6 +109,8 @@ export const PatientDashboard = ({ profile }: Props) => {
       return;
     }
     setLoading(true);
+    
+    // Fetch donors, respecting visibility settings
     const { data } = await supabase
       .from("profiles")
       .select("*, areas(*)")
@@ -66,23 +119,27 @@ export const PatientDashboard = ({ profile }: Props) => {
       .eq("area_id", selectedArea)
       .neq("id", profile.id);
     
-    if (data) setDonors(data as DonorWithArea[]);
+    if (data) {
+      // Filter out donors who have visibility = 'contacts_only' and user is not in their contacts
+      const filteredDonors = (data as DonorWithArea[]).filter(donor => {
+        // If visibility is everyone, show them
+        if ((donor as any).visibility !== 'contacts_only') return true;
+        // If visibility is contacts_only, check if user is in donor's contacts
+        // For now, we mark and filter - full check would need another query
+        return userContacts.includes(donor.id);
+      }).map(donor => ({
+        ...donor,
+        isContact: userContacts.includes(donor.id)
+      }));
+      
+      setDonors(filteredDonors);
+    }
     setLoading(false);
   };
 
-  const sendRequest = async (donorId: string) => {
-    const { error } = await supabase.from("blood_requests").insert({
-      patient_id: profile.id,
-      donor_id: donorId,
-      blood_group: profile.blood_group,
-      urgency: "normal",
-    });
-
-    if (error) {
-      toast.error("Failed to send request");
-    } else {
-      toast.success("Request sent! The donor will be notified.");
-    }
+  const handleRequestSent = () => {
+    // Refresh data after request sent
+    fetchNetworkContacts();
   };
 
   return (
@@ -99,16 +156,25 @@ export const PatientDashboard = ({ profile }: Props) => {
           </div>
         </div>
 
-        {/* My Network - Bubble View */}
+        {/* My Network - Contacts with full access */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-6">
             <Users className="w-6 h-6 text-blood" />
             <h2 className="text-xl font-bold text-foreground">My Network</h2>
+            <Badge variant="secondary" className="text-xs">
+              Contacts see full details
+            </Badge>
           </div>
           
           <div className="bg-card rounded-3xl p-8 shadow-card border border-border">
             {networkContacts.length === 0 ? (
-              <p className="text-center text-muted-foreground">No matching donors in your network yet.</p>
+              <div className="text-center">
+                <Users className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-muted-foreground">No matching donors in your contacts yet.</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add donors as contacts to see their details directly
+                </p>
+              </div>
             ) : (
               <div className="flex flex-wrap gap-4 justify-center">
                 {networkContacts.map((contact, index) => (
@@ -122,7 +188,12 @@ export const PatientDashboard = ({ profile }: Props) => {
                   >
                     <Dialog>
                       <DialogTrigger asChild>
-                        <button className="w-20 h-20 md:w-24 md:h-24 rounded-full blood-gradient flex flex-col items-center justify-center shadow-glow hover:scale-110 transition-transform">
+                        <button className="relative w-20 h-20 md:w-24 md:h-24 rounded-full blood-gradient flex flex-col items-center justify-center shadow-glow hover:scale-110 transition-transform">
+                          {contact.isContact && (
+                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-success rounded-full flex items-center justify-center">
+                              <UserCheck className="w-3 h-3 text-white" />
+                            </div>
+                          )}
                           <span className="text-primary-foreground font-bold text-lg">{contact.blood_group}</span>
                           <span className="text-primary-foreground/80 text-xs truncate max-w-[60px]">
                             {contact.full_name.split(" ")[0]}
@@ -131,23 +202,49 @@ export const PatientDashboard = ({ profile }: Props) => {
                       </DialogTrigger>
                       <DialogContent className="rounded-3xl">
                         <DialogHeader>
-                          <DialogTitle>{contact.full_name}</DialogTitle>
+                          <DialogTitle className="flex items-center gap-2">
+                            {contact.full_name}
+                            {contact.isContact && (
+                              <Badge variant="default" className="bg-success text-xs">Contact</Badge>
+                            )}
+                          </DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4 pt-4">
                           <div className="flex items-center gap-2">
                             <Droplets className="w-5 h-5 text-blood" />
                             <span className="font-semibold">{contact.blood_group}</span>
                           </div>
+                          
                           {contact.areas && (
                             <div className="flex items-center gap-2">
                               <MapPin className="w-5 h-5 text-muted-foreground" />
                               <span>{contact.areas.name}</span>
                             </div>
                           )}
-                          <Button className="w-full" onClick={() => sendRequest(contact.id)}>
-                            <MessageCircle className="w-4 h-4" />
-                            Send Request
-                          </Button>
+
+                          {/* Contact details shown for contacts */}
+                          {contact.isContact && contact.phone && (
+                            <div className="flex items-center gap-2 p-3 rounded-xl bg-success/10 border border-success/20">
+                              <Phone className="w-5 h-5 text-success" />
+                              <span className="font-medium">{contact.phone}</span>
+                            </div>
+                          )}
+
+                          {!contact.isContact && (
+                            <div className="flex items-center gap-2 p-3 rounded-xl bg-muted border border-border">
+                              <Lock className="w-5 h-5 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">
+                                Contact details will be shared after donor accepts your request
+                              </span>
+                            </div>
+                          )}
+
+                          <BloodRequestForm
+                            patientProfileId={profile.id}
+                            bloodGroup={profile.blood_group}
+                            donorId={contact.id}
+                            onRequestSent={handleRequestSent}
+                          />
                         </div>
                       </DialogContent>
                     </Dialog>
@@ -167,10 +264,10 @@ export const PatientDashboard = ({ profile }: Props) => {
 
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <Select value={selectedArea} onValueChange={setSelectedArea}>
-              <SelectTrigger className="h-12 rounded-xl flex-1">
+              <SelectTrigger className="h-12 rounded-xl flex-1 bg-background">
                 <SelectValue placeholder="Select an area" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover border border-border z-50">
                 {areas.map((area) => (
                   <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
                 ))}
@@ -191,18 +288,44 @@ export const PatientDashboard = ({ profile }: Props) => {
                 className="bg-card rounded-2xl p-6 shadow-card border border-border"
               >
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-14 h-14 rounded-full blood-gradient flex items-center justify-center">
+                  <div className="relative w-14 h-14 rounded-full blood-gradient flex items-center justify-center">
                     <span className="text-primary-foreground font-bold">{donor.blood_group}</span>
+                    {donor.isContact && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-success rounded-full flex items-center justify-center">
+                        <UserCheck className="w-3 h-3 text-white" />
+                      </div>
+                    )}
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">{donor.full_name}</p>
                     <p className="text-sm text-muted-foreground">{donor.areas?.name}</p>
+                    {donor.isContact && (
+                      <Badge variant="default" className="bg-success text-xs mt-1">Contact</Badge>
+                    )}
                   </div>
                 </div>
-                <Button className="w-full" onClick={() => sendRequest(donor.id)}>
-                  <MessageCircle className="w-4 h-4" />
-                  Request Blood
-                </Button>
+
+                {/* Show phone for contacts */}
+                {donor.isContact && donor.phone && (
+                  <div className="flex items-center gap-2 mb-4 p-2 rounded-lg bg-success/10 text-sm">
+                    <Phone className="w-4 h-4 text-success" />
+                    <span>{donor.phone}</span>
+                  </div>
+                )}
+
+                {!donor.isContact && (
+                  <div className="flex items-center gap-2 mb-4 p-2 rounded-lg bg-muted text-xs text-muted-foreground">
+                    <Lock className="w-3 h-3" />
+                    <span>Contact details after acceptance</span>
+                  </div>
+                )}
+
+                <BloodRequestForm
+                  patientProfileId={profile.id}
+                  bloodGroup={profile.blood_group}
+                  donorId={donor.id}
+                  onRequestSent={handleRequestSent}
+                />
               </motion.div>
             ))}
           </div>

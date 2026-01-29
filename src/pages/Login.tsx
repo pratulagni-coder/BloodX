@@ -39,7 +39,7 @@ const Login = () => {
           <div className="w-12 h-12 rounded-xl blood-gradient flex items-center justify-center shadow-glow">
             <Droplets className="w-6 h-6 text-primary-foreground" />
           </div>
-          <span className="text-2xl font-bold text-foreground">BloodConnect</span>
+          <span className="text-2xl font-bold text-foreground">BloodX</span>
         </Link>
 
         {/* Card */}
