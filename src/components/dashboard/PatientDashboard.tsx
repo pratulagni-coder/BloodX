@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Users, MapPin, Droplets, Phone, Lock, UserCheck, MessageCircle, Filter } from "lucide-react";
+import { Search, Users, MapPin, Droplets, Phone, Lock, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BloodRequestForm } from "@/components/patient/BloodRequestForm";
+import { AddContactDialog } from "@/components/contacts/AddContactDialog";
+import { ImportContactsDialog } from "@/components/contacts/ImportContactsDialog";
 import type { ProfileWithArea } from "@/pages/Dashboard";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -158,12 +160,26 @@ export const PatientDashboard = ({ profile }: Props) => {
 
         {/* My Network - Contacts with full access */}
         <div className="mb-10">
-          <div className="flex items-center gap-3 mb-6">
-            <Users className="w-6 h-6 text-blood" />
-            <h2 className="text-xl font-bold text-foreground">My Network</h2>
-            <Badge variant="secondary" className="text-xs">
-              Contacts see full details
-            </Badge>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <Users className="w-6 h-6 text-blood" />
+              <h2 className="text-xl font-bold text-foreground">My Network</h2>
+              <Badge variant="secondary" className="text-xs hidden sm:inline-flex">
+                Contacts see full details
+              </Badge>
+            </div>
+            <div className="flex gap-2 sm:ml-auto">
+              <AddContactDialog
+                currentProfileId={profile.id}
+                existingContacts={userContacts}
+                onContactAdded={fetchUserContacts}
+              />
+              <ImportContactsDialog
+                currentProfileId={profile.id}
+                existingContacts={userContacts}
+                onContactsImported={fetchUserContacts}
+              />
+            </div>
           </div>
           
           <div className="bg-card rounded-3xl p-8 shadow-card border border-border">
