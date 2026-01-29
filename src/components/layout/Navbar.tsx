@@ -4,9 +4,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Droplets, Menu, X, LogIn, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
-export const Navbar = () => {
+interface NavbarProps {
+  profileId?: string;
+}
+
+export const Navbar = ({ profileId }: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
@@ -36,6 +42,13 @@ export const Navbar = () => {
                 <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
                   Dashboard
                 </Link>
+                {profileId && (
+                  <NotificationBell
+                    profileId={profileId}
+                    soundEnabled={soundEnabled}
+                    onToggleSound={() => setSoundEnabled(!soundEnabled)}
+                  />
+                )}
                 <Button variant="outline" size="sm" onClick={signOut}>
                   Sign Out
                 </Button>
@@ -55,12 +68,21 @@ export const Navbar = () => {
           </nav>
 
           {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
-          >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <div className="flex items-center gap-2 md:hidden">
+            {user && profileId && (
+              <NotificationBell
+                profileId={profileId}
+                soundEnabled={soundEnabled}
+                onToggleSound={() => setSoundEnabled(!soundEnabled)}
+              />
+            )}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+            >
+              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
       </div>
 

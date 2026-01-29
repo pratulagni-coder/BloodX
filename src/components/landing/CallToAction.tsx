@@ -1,13 +1,14 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Heart, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-export const CallToAction = () => {
+export const CallToAction = forwardRef<HTMLElement>((props, ref) => {
   const navigate = useNavigate();
 
   return (
-    <section className="py-20 md:py-32 relative overflow-hidden">
+    <section ref={ref} className="py-20 md:py-32 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 blood-gradient opacity-95" />
       
@@ -60,4 +61,6 @@ export const CallToAction = () => {
       </div>
     </section>
   );
-};
+});
+
+CallToAction.displayName = "CallToAction";
