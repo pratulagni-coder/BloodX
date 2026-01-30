@@ -46,14 +46,42 @@ export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
   };
 
   const fetchPendingRequests = async () => {
-    const { data } = await supabase
+    // First get requests assigned to this donor
+    const { data: requestsData, error } = await supabase
       .from("blood_requests")
-      .select("*, patient:profiles!blood_requests_patient_id_fkey(full_name, phone)")
+      .select("*")
       .eq("donor_id", profile.id)
       .eq("status", "pending")
       .order("created_at", { ascending: false });
     
-    if (data) setRequests(data as unknown as RequestWithPatient[]);
+    if (error) {
+      console.error("Error fetching requests:", error);
+      return;
+    }
+    
+    if (requestsData && requestsData.length > 0) {
+      // Fetch patient info separately using profiles_public view
+      // The view handles field-level security based on connections
+      const patientIds = [...new Set(requestsData.map(r => r.patient_id))];
+      const { data: patientsData } = await supabase
+        .from("profiles_public" as any)
+        .select("id, full_name, phone")
+        .in("id", patientIds);
+      
+      // Map patients to requests
+      const patientMap = new Map(
+        (patientsData || []).map((p: any) => [p.id, { full_name: p.full_name, phone: p.phone }])
+      );
+      
+      const requestsWithPatients: RequestWithPatient[] = requestsData.map(r => ({
+        ...r,
+        patient: patientMap.get(r.patient_id) || null
+      }));
+      
+      setRequests(requestsWithPatients);
+    } else {
+      setRequests([]);
+    }
   };
 
   const updateVisibility = async (newVisibility: string) => {
