@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Heart, MapPin, Bell, Calendar, ToggleLeft, ToggleRight, Check, X, Droplets, Phone, Eye, EyeOff, Shield, FileText, Droplet } from "lucide-react";
+import { Heart, MapPin, Bell, Calendar, ToggleLeft, ToggleRight, Check, X, Droplets, Phone, Eye, EyeOff, Shield, Droplet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DonorSearchSection } from "@/components/donor/DonorSearchSection";
 import { ContactsManager } from "@/components/donor/ContactsManager";
+import { MedicalReportLink } from "@/components/medical/MedicalReportLink";
 import type { ProfileWithArea } from "@/pages/Dashboard";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -329,16 +330,10 @@ export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
                       {request.message && (
                         <p className="text-sm text-muted-foreground mt-2">{request.message}</p>
                       )}
-                      {request.medical_report_url && (
-                        <a
-                          href={request.medical_report_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 mt-2 text-sm text-primary hover:underline"
-                        >
-                          <FileText className="w-4 h-4" />
-                          View Medical Report
-                        </a>
+                      {request.medical_report_path && (
+                        <div className="mt-2">
+                          <MedicalReportLink filePath={request.medical_report_path} />
+                        </div>
                       )}
                     </div>
                     <div className="flex gap-2">

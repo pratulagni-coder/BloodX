@@ -66,9 +66,10 @@ export const PatientDashboard = ({ profile }: Props) => {
     // These contacts show full details immediately
     if (userContacts.length === 0) {
       // Still show matching donors, but they won't be "contacts"
+      // Use profiles_public view for field-level access control
       const { data } = await supabase
-        .from("profiles")
-        .select("*, areas(*)")
+        .from("profiles_public" as any) // View with field-level security
+        .select("*")
         .eq("is_donor", true)
         .eq("is_available", true)
         .eq("blood_group", profile.blood_group)
@@ -76,20 +77,31 @@ export const PatientDashboard = ({ profile }: Props) => {
         .limit(10);
       
       if (data) {
-        // Mark none as contacts
-        const donorsWithContactStatus = (data as DonorWithArea[]).map(d => ({
-          ...d,
-          isContact: false
-        }));
-        setNetworkContacts(donorsWithContactStatus);
+        // Fetch areas separately for these profiles
+        const profilesWithAreas = await Promise.all(
+          (data as unknown as Profile[]).map(async (d) => {
+            let area: Area | null = null;
+            if (d.area_id) {
+              const { data: areaData } = await supabase
+                .from("areas")
+                .select("*")
+                .eq("id", d.area_id)
+                .single();
+              area = areaData;
+            }
+            return { ...d, areas: area, isContact: false };
+          })
+        );
+        setNetworkContacts(profilesWithAreas);
       }
       return;
     }
 
     // First get contacts who are donors with matching blood group
+    // Use profiles_public view for field-level access control
     const { data } = await supabase
-      .from("profiles")
-      .select("*, areas(*)")
+      .from("profiles_public" as any) // View with field-level security
+      .select("*")
       .eq("is_donor", true)
       .eq("is_available", true)
       .eq("blood_group", profile.blood_group)
@@ -97,11 +109,22 @@ export const PatientDashboard = ({ profile }: Props) => {
       .neq("id", profile.id);
     
     if (data) {
-      const contactDonors = (data as DonorWithArea[]).map(d => ({
-        ...d,
-        isContact: true
-      }));
-      setNetworkContacts(contactDonors);
+      // Fetch areas separately for these profiles
+      const profilesWithAreas = await Promise.all(
+        (data as unknown as Profile[]).map(async (d) => {
+          let area: Area | null = null;
+          if (d.area_id) {
+            const { data: areaData } = await supabase
+              .from("areas")
+              .select("*")
+              .eq("id", d.area_id)
+              .single();
+            area = areaData;
+          }
+          return { ...d, areas: area, isContact: true };
+        })
+      );
+      setNetworkContacts(profilesWithAreas);
     }
   };
 
@@ -112,23 +135,33 @@ export const PatientDashboard = ({ profile }: Props) => {
     }
     setLoading(true);
     
-    // Fetch donors - RLS now handles visibility filtering server-side
+    // Fetch donors - Use profiles_public view for field-level access control
+    // RLS handles visibility, view masks sensitive fields for non-contacts
     const { data } = await supabase
-      .from("profiles")
-      .select("*, areas(*)")
+      .from("profiles_public" as any) // View with field-level security
+      .select("*")
       .eq("is_donor", true)
       .eq("is_available", true)
       .eq("area_id", selectedArea)
       .neq("id", profile.id);
     
     if (data) {
-      // RLS handles visibility, just mark contacts
-      const donorsWithContactStatus = (data as DonorWithArea[]).map(donor => ({
-        ...donor,
-        isContact: userContacts.includes(donor.id)
-      }));
-      
-      setDonors(donorsWithContactStatus);
+      // Fetch areas separately for these profiles
+      const profilesWithAreas = await Promise.all(
+        (data as unknown as Profile[]).map(async (d) => {
+          let area: Area | null = null;
+          if (d.area_id) {
+            const { data: areaData } = await supabase
+              .from("areas")
+              .select("*")
+              .eq("id", d.area_id)
+              .single();
+            area = areaData;
+          }
+          return { ...d, areas: area, isContact: userContacts.includes(d.id) };
+        })
+      );
+      setDonors(profilesWithAreas);
     }
     setLoading(false);
   };

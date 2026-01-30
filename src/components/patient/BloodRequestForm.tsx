@@ -40,26 +40,25 @@ export const BloodRequestForm = ({ patientProfileId, bloodGroup, donorId, onRequ
     }
   };
 
+  // Upload and return the FILE PATH (not a public URL) for secure storage
   const uploadMedicalReport = async (userId: string): Promise<string | null> => {
     if (!medicalReport) return null;
 
     const fileExt = medicalReport.name.split(".").pop();
-    const fileName = `${userId}/${Date.now()}.${fileExt}`;
+    const filePath = `${userId}/${Date.now()}.${fileExt}`;
 
     const { error } = await supabase.storage
       .from("medical-reports")
-      .upload(fileName, medicalReport, { upsert: false });
+      .upload(filePath, medicalReport, { upsert: false });
 
     if (error) {
       console.error("Upload error:", error);
       return null;
     }
 
-    const { data: urlData } = supabase.storage
-      .from("medical-reports")
-      .getPublicUrl(fileName);
-
-    return urlData.publicUrl;
+    // Return the file path, NOT a public URL
+    // Signed URLs will be generated when viewing the file
+    return filePath;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,7 +86,7 @@ export const BloodRequestForm = ({ patientProfileId, bloodGroup, donorId, onRequ
         hospital_name: hospitalName || null,
         message: message || null,
         units_required: unitsRequired,
-        medical_report_url: reportUrl,
+        medical_report_path: reportUrl, // Store file path, not URL
       });
 
       if (error) {

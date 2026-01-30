@@ -54,15 +54,31 @@ export const ContactsManager = ({ profileId, onContactsChange }: Props) => {
       setContactIds(ids);
 
       if (ids.length > 0) {
-        // Fetch profiles of contacts
+        // Fetch profiles of contacts using the secure view
+        // Since these are contacts, phone/medical info will be visible
         const { data: profiles } = await supabase
-          .from("profiles")
-          .select("*, areas(*)")
+          .from("profiles_public" as any) // View with field-level security
+          .select("*")
           .in("id", ids)
           .order("full_name");
 
         if (profiles) {
-          setContacts(profiles as ContactProfile[]);
+          // Fetch areas separately for these profiles
+          const profilesWithAreas = await Promise.all(
+            (profiles as unknown as Profile[]).map(async (p) => {
+              let area: Area | null = null;
+              if (p.area_id) {
+                const { data: areaData } = await supabase
+                  .from("areas")
+                  .select("*")
+                  .eq("id", p.area_id)
+                  .single();
+                area = areaData;
+              }
+              return { ...p, areas: area };
+            })
+          );
+          setContacts(profilesWithAreas as ContactProfile[]);
         }
       } else {
         setContacts([]);
