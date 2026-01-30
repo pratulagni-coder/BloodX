@@ -43,7 +43,7 @@ export type Database = {
           donor_id: string | null
           hospital_name: string | null
           id: string
-          medical_report_url: string | null
+          medical_report_path: string | null
           message: string | null
           patient_id: string
           status: Database["public"]["Enums"]["request_status"] | null
@@ -58,7 +58,7 @@ export type Database = {
           donor_id?: string | null
           hospital_name?: string | null
           id?: string
-          medical_report_url?: string | null
+          medical_report_path?: string | null
           message?: string | null
           patient_id: string
           status?: Database["public"]["Enums"]["request_status"] | null
@@ -73,7 +73,7 @@ export type Database = {
           donor_id?: string | null
           hospital_name?: string | null
           id?: string
-          medical_report_url?: string | null
+          medical_report_path?: string | null
           message?: string | null
           patient_id?: string
           status?: Database["public"]["Enums"]["request_status"] | null
@@ -97,10 +97,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "blood_requests_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "blood_requests_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blood_requests_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -178,6 +192,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -299,22 +320,110 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "user_contacts_contact_user_id_fkey"
+            columns: ["contact_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "user_contacts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_contacts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_public: {
+        Row: {
+          area_id: string | null
+          blood_group: Database["public"]["Enums"]["blood_group"] | null
+          created_at: string | null
+          district: string | null
+          full_name: string | null
+          has_medical_condition: boolean | null
+          id: string | null
+          is_available: boolean | null
+          is_donor: boolean | null
+          is_on_medication: boolean | null
+          last_donation_date: string | null
+          medical_condition_details: string | null
+          medication_details: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string | null
+          user_id: string | null
+          visibility: string | null
+        }
+        Insert: {
+          area_id?: string | null
+          blood_group?: Database["public"]["Enums"]["blood_group"] | null
+          created_at?: string | null
+          district?: string | null
+          full_name?: string | null
+          has_medical_condition?: never
+          id?: string | null
+          is_available?: boolean | null
+          is_donor?: boolean | null
+          is_on_medication?: never
+          last_donation_date?: string | null
+          medical_condition_details?: never
+          medication_details?: never
+          phone?: never
+          state?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          visibility?: string | null
+        }
+        Update: {
+          area_id?: string | null
+          blood_group?: Database["public"]["Enums"]["blood_group"] | null
+          created_at?: string | null
+          district?: string | null
+          full_name?: string | null
+          has_medical_condition?: never
+          id?: string | null
+          is_available?: boolean | null
+          is_donor?: boolean | null
+          is_on_medication?: never
+          last_donation_date?: string | null
+          medical_condition_details?: never
+          medication_details?: never
+          phone?: never
+          state?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          visibility?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "areas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_profile_id_for_user: { Args: { user_uuid: string }; Returns: string }
       has_blood_request_connection: {
         Args: { checking_user_id: string; profile_id: string }
+        Returns: boolean
+      }
+      is_matching_donor_for_request: {
+        Args: { checking_user_id: string; request_id: string }
         Returns: boolean
       }
       is_user_contact_of: {
