@@ -18,6 +18,7 @@ type BloodRequest = Database["public"]["Tables"]["blood_requests"]["Row"];
 interface Props {
   profile: ProfileWithArea;
   onProfileUpdate: () => void;
+  refreshKey?: number;
 }
 
 interface RequestWithPatient extends BloodRequest {
@@ -27,7 +28,7 @@ interface RequestWithPatient extends BloodRequest {
   } | null;
 }
 
-export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
+export const DonorDashboard = ({ profile, onProfileUpdate, refreshKey = 0 }: Props) => {
   const [isAvailable, setIsAvailable] = useState(profile.is_available ?? true);
   const [visibility, setVisibility] = useState((profile as any).visibility || "everyone");
   const [areas, setAreas] = useState<Area[]>([]);
@@ -38,7 +39,7 @@ export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
   useEffect(() => {
     fetchAreas();
     fetchPendingRequests();
-  }, []);
+  }, [refreshKey]); // Re-fetch when refreshKey changes
 
   const fetchAreas = async () => {
     const { data } = await supabase.from("areas").select("*").order("name");
@@ -131,6 +132,9 @@ export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
   };
 
   const handleRequest = async (requestId: string, accept: boolean) => {
+    // Find the request to get patient info
+    const request = requests.find(r => r.id === requestId);
+    
     const { error } = await supabase
       .from("blood_requests")
       .update({ status: accept ? "accepted" : "declined" })
@@ -139,6 +143,29 @@ export const DonorDashboard = ({ profile, onProfileUpdate }: Props) => {
     if (error) {
       toast.error("Failed to update request");
     } else {
+      // Send notification to patient about the donor's response
+      if (request) {
+        const notificationData = {
+          user_id: request.patient_id,
+          related_request_id: requestId,
+          type: accept ? "accepted" : "declined",
+          title: accept 
+            ? "🎉 Your blood request has been ACCEPTED!" 
+            : "A donor has declined your request",
+          message: accept
+            ? `${profile.full_name} has agreed to help with your ${request.blood_group} blood request. Contact details are now available.`
+            : `A donor has declined your ${request.blood_group} blood request. Don't worry, we're still looking for other donors.`,
+        };
+
+        const { error: notifError } = await supabase
+          .from("notifications")
+          .insert(notificationData);
+
+        if (notifError) {
+          console.error("Failed to send notification:", notifError);
+        }
+      }
+      
       toast.success(accept ? "Request accepted! Contact details shared." : "Request declined.");
       fetchPendingRequests();
     }
