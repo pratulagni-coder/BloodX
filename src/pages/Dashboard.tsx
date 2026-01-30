@@ -97,7 +97,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen relative">
       <Navbar profileId={profile.id} />
       <main className="pt-20">
         {profile.is_donor ? (
