@@ -3,12 +3,12 @@ import { HowItWorks } from "@/components/landing/HowItWorks";
 import { Features } from "@/components/landing/Features";
 import { CallToAction } from "@/components/landing/CallToAction";
 import { Footer } from "@/components/landing/Footer";
-import { Navbar } from "@/components/layout/Navbar";
+import { Navbar1 } from "@/components/ui/navbar-1";
 
 const Index = () => {
   return (
     <div className="min-h-screen relative">
-      <Navbar />
+      <Navbar1 />
       <main>
         <Hero />
         <HowItWorks />
