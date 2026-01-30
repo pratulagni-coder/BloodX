@@ -23,9 +23,10 @@ interface DonorWithArea extends Profile {
 
 interface Props {
   profile: ProfileWithArea;
+  refreshKey?: number;
 }
 
-export const PatientDashboard = ({ profile }: Props) => {
+export const PatientDashboard = ({ profile, refreshKey = 0 }: Props) => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [selectedArea, setSelectedArea] = useState("");
   const [donors, setDonors] = useState<DonorWithArea[]>([]);

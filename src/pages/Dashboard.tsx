@@ -101,9 +101,9 @@ const Dashboard = () => {
       <Navbar profileId={profile.id} />
       <main className="pt-20">
         {profile.is_donor ? (
-          <DonorDashboard profile={profile} onProfileUpdate={fetchProfile} />
+          <DonorDashboard profile={profile} onProfileUpdate={fetchProfile} refreshKey={refreshKey} />
         ) : (
-          <PatientDashboard profile={profile} />
+          <PatientDashboard profile={profile} refreshKey={refreshKey} />
         )}
       </main>
     </div>
