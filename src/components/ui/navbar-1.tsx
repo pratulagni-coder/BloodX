@@ -33,12 +33,12 @@ const Navbar1 = ({ profileId }: Navbar1Props) => {
       ]
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50">
+    <nav className="fixed top-4 left-4 right-4 z-50">
       {/* Glass background */}
-      <div className="absolute inset-0 bg-background/60 backdrop-blur-xl border-b border-white/10" />
+      <div className="absolute inset-0 bg-background/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg shadow-black/5" />
       
-      <div className="container relative px-4">
-        <div className="flex items-center justify-between h-16 md:h-20">
+      <div className="relative px-6">
+        <div className="flex items-center justify-between h-14 md:h-16">
           
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
