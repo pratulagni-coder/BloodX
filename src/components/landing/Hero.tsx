@@ -8,8 +8,8 @@ export const Hero = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-warm-cream via-background to-blood-light" />
+      {/* Transparent overlay for better text readability */}
+      <div className="absolute inset-0 bg-black/20" />
       
       {/* Floating blood drops decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -37,10 +37,10 @@ export const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blood-light border border-blood/20 mb-8"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-8"
           >
-            <Droplets className="w-4 h-4 text-blood" />
-            <span className="text-sm font-medium text-blood">People-to-People Connection</span>
+            <Droplets className="w-4 h-4 text-red-400" />
+            <span className="text-sm font-medium text-white/90">People-to-People Connection</span>
           </motion.div>
 
           {/* Main heading */}
@@ -48,10 +48,10 @@ export const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-foreground leading-tight mb-6"
+            className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white leading-tight mb-6"
           >
             Every Drop of Blood{" "}
-            <span className="text-gradient">Saves a Life</span>
+            <span className="text-red-400">Saves a Life</span>
           </motion.h1>
 
           {/* Subheading */}
@@ -59,7 +59,7 @@ export const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
+            className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto mb-10"
           >
             Connect directly with donors in your community. No intermediaries, 
             just people helping people when it matters most.
@@ -86,7 +86,7 @@ export const Hero = () => {
               variant="outline"
               size="xl"
               onClick={() => navigate("/register?role=patient")}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto border-white/30 text-white hover:bg-white/10"
             >
               <Droplets className="w-5 h-5" />
               I Need Blood
@@ -98,18 +98,18 @@ export const Hero = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="mt-16 flex flex-wrap justify-center gap-8 text-muted-foreground"
+            className="mt-16 flex flex-wrap justify-center gap-8 text-white/70"
           >
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-success" />
+              <div className="w-3 h-3 rounded-full bg-green-500" />
               <span className="text-sm">100% Volunteer Based</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blood" />
+              <div className="w-3 h-3 rounded-full bg-red-500" />
               <span className="text-sm">Privacy Focused</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-trust-blue" />
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
               <span className="text-sm">Verified Donors</span>
             </div>
           </motion.div>
