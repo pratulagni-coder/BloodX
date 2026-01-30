@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { DonorDashboard } from "@/components/dashboard/DonorDashboard";
 import { PatientDashboard } from "@/components/dashboard/PatientDashboard";
-import { Navbar } from "@/components/layout/Navbar";
+import { Navbar1 } from "@/components/ui/navbar-1";
 import { Loader2 } from "lucide-react";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import type { Database } from "@/integrations/supabase/types";
@@ -98,7 +98,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen relative">
-      <Navbar profileId={profile.id} />
+      <Navbar1 profileId={profile.id} />
       <main className="pt-20">
         {profile.is_donor ? (
           <DonorDashboard profile={profile} onProfileUpdate={fetchProfile} refreshKey={refreshKey} />
