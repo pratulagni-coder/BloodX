@@ -7,7 +7,7 @@ import { Menu, X, Droplets, LogIn, UserPlus } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
 import { NotificationBell } from "@/components/notifications/NotificationBell"
-import { Button } from "@/components/ui/button"
+import { LogoutButton } from "@/components/ui/LogoutButton"
 
 interface Navbar1Props {
   profileId?: string
@@ -83,14 +83,7 @@ const Navbar1 = ({ profileId }: Navbar1Props) => {
                     onToggleSound={() => setSoundEnabled(!soundEnabled)}
                   />
                 )}
-                <motion.button
-                  onClick={signOut}
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground border border-white/10 bg-white/5 backdrop-blur-sm transition-colors"
-                  whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.1)" }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Sign Out
-                </motion.button>
+                <LogoutButton onClick={signOut} variant="dark" />
               </>
             ) : (
               <>
@@ -196,12 +189,11 @@ const Navbar1 = ({ profileId }: Navbar1Props) => {
                   className="mt-4 pt-4 border-t border-white/10"
                 >
                   {user ? (
-                    <button
-                      onClick={() => { signOut(); toggleMenu(); }}
-                      className="w-full px-4 py-3 rounded-xl text-lg font-medium text-muted-foreground hover:text-foreground border border-white/10 bg-white/5 transition-colors"
-                    >
-                      Sign Out
-                    </button>
+                    <LogoutButton 
+                      onClick={() => { signOut(); toggleMenu(); }} 
+                      variant="dark" 
+                      className="w-full"
+                    />
                   ) : (
                     <div className="flex flex-col gap-2">
                       <button
