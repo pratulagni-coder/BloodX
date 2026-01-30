@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Users, MapPin, Droplets, Phone, Lock, UserCheck } from "lucide-react";
+import { Search, Users, MapPin, Droplets, Phone, Lock, UserCheck, ClipboardList, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -15,10 +15,15 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Area = Database["public"]["Tables"]["areas"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type BloodRequest = Database["public"]["Tables"]["blood_requests"]["Row"];
 
 interface DonorWithArea extends Profile {
   areas: Area | null;
   isContact?: boolean;
+}
+
+interface RequestWithDonor extends BloodRequest {
+  donor: (Profile & { areas: Area | null }) | null;
 }
 
 interface Props {
@@ -32,12 +37,21 @@ export const PatientDashboard = ({ profile, refreshKey = 0 }: Props) => {
   const [donors, setDonors] = useState<DonorWithArea[]>([]);
   const [networkContacts, setNetworkContacts] = useState<DonorWithArea[]>([]);
   const [userContacts, setUserContacts] = useState<string[]>([]);
+  const [myRequests, setMyRequests] = useState<RequestWithDonor[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchAreas();
     fetchUserContacts();
+    fetchMyRequests();
   }, []);
+
+  // Re-fetch requests when refreshKey changes (from realtime updates)
+  useEffect(() => {
+    if (refreshKey > 0) {
+      fetchMyRequests();
+    }
+  }, [refreshKey]);
 
   useEffect(() => {
     if (userContacts.length >= 0) {
@@ -167,9 +181,81 @@ export const PatientDashboard = ({ profile, refreshKey = 0 }: Props) => {
     setLoading(false);
   };
 
+  const fetchMyRequests = async () => {
+    const { data, error } = await supabase
+      .from("blood_requests")
+      .select("*")
+      .eq("patient_id", profile.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching requests:", error);
+      return;
+    }
+
+    if (data) {
+      // Fetch donor details for each request that has a donor
+      const requestsWithDonors = await Promise.all(
+        data.map(async (request) => {
+          let donor: (Profile & { areas: Area | null }) | null = null;
+          if (request.donor_id) {
+            const { data: donorData } = await supabase
+              .from("profiles")
+              .select("*, areas(*)")
+              .eq("id", request.donor_id)
+              .single();
+            if (donorData) {
+              donor = donorData as Profile & { areas: Area | null };
+            }
+          }
+          return { ...request, donor };
+        })
+      );
+      setMyRequests(requestsWithDonors);
+    }
+  };
+
   const handleRequestSent = () => {
     // Refresh data after request sent
     fetchNetworkContacts();
+    fetchMyRequests();
+  };
+
+  const getStatusIcon = (status: string | null) => {
+    switch (status) {
+      case "accepted":
+        return <CheckCircle2 className="w-4 h-4 text-success" />;
+      case "declined":
+        return <XCircle className="w-4 h-4 text-destructive" />;
+      case "completed":
+        return <CheckCircle2 className="w-4 h-4 text-primary" />;
+      default:
+        return <Clock className="w-4 h-4 text-warning" />;
+    }
+  };
+
+  const getStatusBadge = (status: string | null) => {
+    switch (status) {
+      case "accepted":
+        return <Badge className="bg-success/10 text-success border-success/20">Accepted</Badge>;
+      case "declined":
+        return <Badge variant="destructive">Declined</Badge>;
+      case "completed":
+        return <Badge className="bg-primary/10 text-primary border-primary/20">Completed</Badge>;
+      default:
+        return <Badge variant="secondary">Pending</Badge>;
+    }
+  };
+
+  const getUrgencyBadge = (urgency: string | null) => {
+    switch (urgency) {
+      case "critical":
+        return <Badge className="bg-destructive text-destructive-foreground">Critical</Badge>;
+      case "urgent":
+        return <Badge className="bg-warning text-warning-foreground">Urgent</Badge>;
+      default:
+        return <Badge variant="outline">Normal</Badge>;
+    }
   };
 
   return (
@@ -183,6 +269,109 @@ export const PatientDashboard = ({ profile, refreshKey = 0 }: Props) => {
           <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blood-light border border-blood/20">
             <Droplets className="w-5 h-5 text-blood" />
             <span className="font-bold text-blood">{profile.blood_group}</span>
+          </div>
+        </div>
+
+        {/* My Requests / Approvals Section */}
+        <div className="mb-10">
+          <div className="flex items-center gap-3 mb-6">
+            <ClipboardList className="w-6 h-6 text-blood" />
+            <h2 className="text-xl font-bold text-foreground">My Requests</h2>
+            <Badge variant="secondary" className="text-xs">
+              {myRequests.length} total
+            </Badge>
+          </div>
+          
+          <div className="bg-card rounded-3xl p-6 shadow-card border border-border">
+            {myRequests.length === 0 ? (
+              <div className="text-center py-8">
+                <ClipboardList className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-muted-foreground">No blood requests yet.</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Search for donors and send requests to get started
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {myRequests.map((request) => (
+                  <motion.div
+                    key={request.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-2xl bg-background border border-border"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                      {/* Request Info */}
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-12 h-12 rounded-full blood-gradient flex items-center justify-center">
+                          <span className="text-primary-foreground font-bold text-sm">{request.blood_group}</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {getStatusBadge(request.status)}
+                            {getUrgencyBadge(request.urgency)}
+                            <span className="text-xs text-muted-foreground">
+                              {request.units_required} unit{request.units_required !== 1 ? "s" : ""}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {request.hospital_name || "No hospital specified"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(request.created_at || "").toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Donor Info */}
+                      <div className="sm:w-64">
+                        {request.donor ? (
+                          <div className="p-3 rounded-xl bg-muted/50 border border-border">
+                            <div className="flex items-center gap-2 mb-2">
+                              {getStatusIcon(request.status)}
+                              <span className="font-medium text-sm">{request.donor.full_name}</span>
+                            </div>
+                            
+                            {request.donor.areas && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                                <MapPin className="w-3 h-3" />
+                                <span>{request.donor.areas.name}</span>
+                              </div>
+                            )}
+
+                            {/* Show contact only when accepted or completed */}
+                            {(request.status === "accepted" || request.status === "completed") && request.donor.phone ? (
+                              <div className="flex items-center gap-2 p-2 rounded-lg bg-success/10 border border-success/20">
+                                <Phone className="w-4 h-4 text-success" />
+                                <span className="font-medium text-sm">{request.donor.phone}</span>
+                              </div>
+                            ) : request.status === "pending" ? (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Lock className="w-3 h-3" />
+                                <span>Contact shown after acceptance</span>
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="p-3 rounded-xl bg-muted/30 border border-dashed border-border">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <AlertCircle className="w-4 h-4" />
+                              <span className="text-sm">Awaiting donor</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {request.message && (
+                      <p className="mt-3 text-sm text-muted-foreground italic border-t border-border pt-3">
+                        "{request.message}"
+                      </p>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
