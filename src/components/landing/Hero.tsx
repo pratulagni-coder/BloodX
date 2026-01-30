@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Heart, Droplets, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import SplitText from "@/components/ui/SplitText";
 
 export const Hero = () => {
   const navigate = useNavigate();
@@ -43,16 +44,37 @@ export const Hero = () => {
             <span className="text-sm font-medium text-white/90">People-to-People Connection</span>
           </motion.div>
 
-          {/* Main heading */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white leading-tight mb-6"
-          >
-            Every Drop of Blood{" "}
-            <span className="text-red-400">Saves a Life</span>
-          </motion.h1>
+          {/* Main heading with SplitText animation */}
+          <div className="mb-6">
+            <SplitText
+              text="Every Drop of Blood"
+              tag="h1"
+              className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white leading-tight"
+              delay={80}
+              duration={0.8}
+              ease="power3.out"
+              splitType="chars"
+              from={{ opacity: 0, y: 50, rotateX: -90 }}
+              to={{ opacity: 1, y: 0, rotateX: 0 }}
+              threshold={0.1}
+              rootMargin="0px"
+              textAlign="center"
+            />
+            <SplitText
+              text="Saves a Life"
+              tag="span"
+              className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-red-400 leading-tight block mt-2"
+              delay={60}
+              duration={0.8}
+              ease="power3.out"
+              splitType="chars"
+              from={{ opacity: 0, y: 50, scale: 0.5 }}
+              to={{ opacity: 1, y: 0, scale: 1 }}
+              threshold={0.1}
+              rootMargin="0px"
+              textAlign="center"
+            />
+          </div>
 
           {/* Subheading */}
           <motion.p
