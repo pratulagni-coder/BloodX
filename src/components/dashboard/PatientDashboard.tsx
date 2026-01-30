@@ -112,7 +112,7 @@ export const PatientDashboard = ({ profile }: Props) => {
     }
     setLoading(true);
     
-    // Fetch donors, respecting visibility settings
+    // Fetch donors - RLS now handles visibility filtering server-side
     const { data } = await supabase
       .from("profiles")
       .select("*, areas(*)")
@@ -122,19 +122,13 @@ export const PatientDashboard = ({ profile }: Props) => {
       .neq("id", profile.id);
     
     if (data) {
-      // Filter out donors who have visibility = 'contacts_only' and user is not in their contacts
-      const filteredDonors = (data as DonorWithArea[]).filter(donor => {
-        // If visibility is everyone, show them
-        if ((donor as any).visibility !== 'contacts_only') return true;
-        // If visibility is contacts_only, check if user is in donor's contacts
-        // For now, we mark and filter - full check would need another query
-        return userContacts.includes(donor.id);
-      }).map(donor => ({
+      // RLS handles visibility, just mark contacts
+      const donorsWithContactStatus = (data as DonorWithArea[]).map(donor => ({
         ...donor,
         isContact: userContacts.includes(donor.id)
       }));
       
-      setDonors(filteredDonors);
+      setDonors(donorsWithContactStatus);
     }
     setLoading(false);
   };

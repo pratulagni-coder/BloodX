@@ -312,7 +312,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_profile_id_for_user: { Args: { user_uuid: string }; Returns: string }
+      has_blood_request_connection: {
+        Args: { checking_user_id: string; profile_id: string }
+        Returns: boolean
+      }
+      is_user_contact_of: {
+        Args: { checking_user_id: string; profile_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       blood_group: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
