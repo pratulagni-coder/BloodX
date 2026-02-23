@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LocationSelector } from "@/components/registration/LocationSelector";
 import { DonorMedicalInfo } from "@/components/registration/DonorMedicalInfo";
+import { isStrongPassword, PASSWORD_POLICY_MESSAGE } from "@/lib/security";
 import type { Database } from "@/integrations/supabase/types";
 
 type BloodGroup = Database["public"]["Enums"]["blood_group"];
@@ -52,6 +53,11 @@ const Register = () => {
     e.preventDefault();
     if (!bloodGroup) {
       toast.error("Please select your blood group");
+      return;
+    }
+
+    if (!isStrongPassword(password)) {
+      toast.error(PASSWORD_POLICY_MESSAGE);
       return;
     }
 
@@ -223,7 +229,8 @@ const Register = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-12 pr-12 h-12 rounded-xl"
                     required
-                    minLength={6}
+                    minLength={10}
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"

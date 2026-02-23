@@ -33,16 +33,22 @@ export const AddContactDialog = ({ currentProfileId, existingContacts, onContact
       return;
     }
 
+    const sanitizedQuery = searchQuery.trim().replace(/[^a-zA-Z0-9\s+()-]/g, "");
+    if (!sanitizedQuery) {
+      toast.error("Search contains unsupported characters");
+      return;
+    }
+
     setSearching(true);
     setResults([]);
 
     // Search donors by name or phone
     const { data, error } = await supabase
-      .from("profiles")
+      .from("profiles_public" as any)
       .select("*, areas(*)")
       .eq("is_donor", true)
       .neq("id", currentProfileId)
-      .or(`full_name.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%`)
+      .or(`full_name.ilike.*${sanitizedQuery}*,phone.ilike.*${sanitizedQuery}*`)
       .limit(10);
 
     if (error) {

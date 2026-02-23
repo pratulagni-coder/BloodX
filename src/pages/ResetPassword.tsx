@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { isStrongPassword, PASSWORD_POLICY_MESSAGE } from "@/lib/security";
 import { toast } from "sonner";
 
 const ResetPassword = () => {
@@ -35,8 +36,8 @@ const ResetPassword = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (!isStrongPassword(password)) {
+      toast.error(PASSWORD_POLICY_MESSAGE);
       return;
     }
 
@@ -52,7 +53,7 @@ const ResetPassword = () => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error("Unable to reset password. Please request a new reset link and try again.");
     } else {
       setSuccess(true);
       toast.success("Password updated successfully!");
@@ -116,7 +117,8 @@ const ResetPassword = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 pr-10 h-12 rounded-xl"
                     required
-                    minLength={6}
+                    autoComplete="new-password"
+                    minLength={10}
                   />
                   <button
                     type="button"
@@ -140,7 +142,8 @@ const ResetPassword = () => {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="pl-10 pr-10 h-12 rounded-xl"
                     required
-                    minLength={6}
+                    autoComplete="new-password"
+                    minLength={10}
                   />
                   <button
                     type="button"

@@ -32,7 +32,7 @@ export const ImportContactsDialog = ({ currentProfileId, existingContacts, onCon
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
   const [step, setStep] = useState<"initial" | "results">("initial");
 
-  const isContactPickerSupported = "contacts" in navigator && "ContactsManager" in window;
+  const isContactPickerSupported = typeof navigator !== "undefined" && typeof navigator.contacts?.select === "function";
 
   const handleImportFromDevice = async () => {
     if (!isContactPickerSupported) {
@@ -43,7 +43,7 @@ export const ImportContactsDialog = ({ currentProfileId, existingContacts, onCon
     setImporting(true);
 
     try {
-      // @ts-ignore - Contact Picker API
+      // @ts-expect-error - Contact Picker API is not yet in TypeScript DOM lib
       const contacts: ContactInfo[] = await navigator.contacts.select(["name", "tel"], { multiple: true });
 
       if (!contacts || contacts.length === 0) {
@@ -53,7 +53,7 @@ export const ImportContactsDialog = ({ currentProfileId, existingContacts, onCon
       }
 
       // Extract phone numbers
-      const phoneNumbers: string[] = [];
+      const phoneNumbers = new Set<string>();
       contacts.forEach((contact) => {
         if (contact.tel) {
           contact.tel.forEach((phone) => {
@@ -61,13 +61,13 @@ export const ImportContactsDialog = ({ currentProfileId, existingContacts, onCon
             const normalized = phone.replace(/[\s\-\(\)]/g, "");
             if (normalized.length >= 10) {
               // Get last 10 digits for matching
-              phoneNumbers.push(normalized.slice(-10));
+              phoneNumbers.add(normalized.slice(-10));
             }
           });
         }
       });
 
-      if (phoneNumbers.length === 0) {
+      if (phoneNumbers.size === 0) {
         toast.info("No valid phone numbers found in selected contacts");
         setImporting(false);
         return;
@@ -75,7 +75,7 @@ export const ImportContactsDialog = ({ currentProfileId, existingContacts, onCon
 
       // Search for donors with matching phone numbers
       const { data, error } = await supabase
-        .from("profiles")
+        .from("profiles_public" as any)
         .select("*, areas(*)")
         .eq("is_donor", true)
         .neq("id", currentProfileId);
@@ -91,7 +91,7 @@ export const ImportContactsDialog = ({ currentProfileId, existingContacts, onCon
       const matches = (data as DonorMatch[]).filter((donor) => {
         if (!donor.phone) return false;
         const donorPhone = donor.phone.replace(/[\s\-\(\)]/g, "").slice(-10);
-        return phoneNumbers.includes(donorPhone);
+        return phoneNumbers.has(donorPhone);
       });
 
       setMatchedDonors(matches);

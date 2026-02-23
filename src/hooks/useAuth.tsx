@@ -3,6 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { normalizeEmail } from "@/lib/security";
 
 interface AuthContextType {
   user: User | null;
@@ -43,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, metadata?: object) => {
     const { error } = await supabase.auth.signUp({
-      email,
+      email: normalizeEmail(email),
       password,
       options: {
         emailRedirectTo: window.location.origin,
@@ -52,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error("Unable to create account. Please check your details and try again.");
       throw error;
     }
 
@@ -61,12 +62,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: normalizeEmail(email),
       password,
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error("Invalid login credentials.");
       throw error;
     }
 
@@ -77,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      toast.error(error.message);
+      toast.error("Unable to sign out right now. Please try again.");
       throw error;
     }
     navigate("/");

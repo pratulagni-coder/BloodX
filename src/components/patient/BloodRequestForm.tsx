@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { getSafeFileExtension, isAllowedMedicalReport } from "@/lib/security";
 
 type UrgencyLevel = Database["public"]["Enums"]["urgency_level"];
 
@@ -36,6 +37,12 @@ export const BloodRequestForm = ({ patientProfileId, bloodGroup, donorId, onRequ
         toast.error("File size must be less than 10MB");
         return;
       }
+
+      if (!isAllowedMedicalReport(file)) {
+        toast.error("Only valid PDF, JPG, or PNG files are allowed");
+        return;
+      }
+
       setMedicalReport(file);
     }
   };
@@ -44,8 +51,9 @@ export const BloodRequestForm = ({ patientProfileId, bloodGroup, donorId, onRequ
   const uploadMedicalReport = async (userId: string): Promise<string | null> => {
     if (!medicalReport) return null;
 
-    const fileExt = medicalReport.name.split(".").pop();
-    const filePath = `${userId}/${Date.now()}.${fileExt}`;
+    const fileExt = getSafeFileExtension(medicalReport);
+    const fileName = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+    const filePath = `${userId}/${fileName}.${fileExt}`;
 
     const { error } = await supabase.storage
       .from("medical-reports")
