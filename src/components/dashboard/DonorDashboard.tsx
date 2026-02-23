@@ -35,6 +35,7 @@ export const DonorDashboard = ({ profile, onProfileUpdate, refreshKey = 0 }: Pro
   const [selectedArea, setSelectedArea] = useState(profile.area_id || "");
   const [requests, setRequests] = useState<RequestWithPatient[]>([]);
   const [loading, setLoading] = useState(false);
+  const [contactsRefreshKey, setContactsRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchAreas();
@@ -415,10 +416,10 @@ export const DonorDashboard = ({ profile, onProfileUpdate, refreshKey = 0 }: Pro
         </motion.div>
 
         {/* Contacts Manager */}
-        <ContactsManager profileId={profile.id} />
+        <ContactsManager profileId={profile.id} onContactsChange={() => setContactsRefreshKey((prev) => prev + 1)} />
 
         {/* District Search for Patients */}
-        <DonorSearchSection profileId={profile.id} />
+        <DonorSearchSection profileId={profile.id} contactsRefreshKey={contactsRefreshKey} />
 
         {/* Disclaimer */}
         <div className="mt-8 p-4 rounded-2xl bg-blood-light border border-blood/20">

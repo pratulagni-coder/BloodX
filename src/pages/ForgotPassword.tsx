@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeEmail } from "@/lib/security";
 import { toast } from "sonner";
 
 const ForgotPassword = () => {
@@ -23,15 +24,18 @@ const ForgotPassword = () => {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const normalizedEmail = normalizeEmail(email);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error("If the email is registered, a reset link will be sent.");
     } else {
       setSent(true);
-      toast.success("Password reset email sent!");
+      setEmail(normalizedEmail);
+      toast.success("If the email is registered, a reset link will be sent.");
     }
 
     setLoading(false);

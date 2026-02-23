@@ -50,6 +50,15 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
+## Environment variables
+
+Create a `.env.local` file before running the app:
+
+```sh
+VITE_SUPABASE_URL=https://<your-project>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<your-anon-key>
+```
+
 ## What technologies are used for this project?
 
 This project is built with:

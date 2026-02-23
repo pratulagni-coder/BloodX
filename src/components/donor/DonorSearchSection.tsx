@@ -18,20 +18,15 @@ interface DonorWithArea extends Profile {
   isContact?: boolean;
 }
 
-interface ContactProfile extends Profile {
-  areas: Area | null;
-}
-
 interface Props {
   profileId: string;
-  stateId?: string;
+  contactsRefreshKey?: number;
 }
 
-export const DonorSearchSection = ({ profileId, stateId }: Props) => {
+export const DonorSearchSection = ({ profileId, contactsRefreshKey = 0 }: Props) => {
   const [districts, setDistricts] = useState<District[]>([]);
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [donors, setDonors] = useState<DonorWithArea[]>([]);
-  const [contacts, setContacts] = useState<ContactProfile[]>([]);
   const [contactIds, setContactIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,8 +35,11 @@ export const DonorSearchSection = ({ profileId, stateId }: Props) => {
 
   useEffect(() => {
     fetchDistricts();
-    fetchContacts();
   }, []);
+
+  useEffect(() => {
+    fetchContacts();
+  }, [profileId, contactsRefreshKey]);
 
   const fetchDistricts = async () => {
     setLoadingDistricts(true);
@@ -57,29 +55,17 @@ export const DonorSearchSection = ({ profileId, stateId }: Props) => {
   };
 
   const fetchContacts = async () => {
-    // Get all contacts for this user
-    const { data: contactData } = await supabase
+    const { data, error } = await supabase
       .from("user_contacts")
       .select("contact_user_id")
       .eq("user_id", profileId);
 
-    if (contactData) {
-      const ids = contactData.map(c => c.contact_user_id);
-      setContactIds(ids);
-
-      if (ids.length > 0) {
-        // Fetch contact profiles
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*, areas(*)")
-          .in("id", ids)
-          .eq("is_donor", false); // Get patients (non-donors) who might need blood
-
-        if (profileData) {
-          setContacts(profileData as ContactProfile[]);
-        }
-      }
+    if (error) {
+      console.error("Error fetching contacts:", error);
+      return;
     }
+
+    setContactIds((data || []).map((c) => c.contact_user_id));
   };
 
   const handleDistrictSelect = (districtId: string) => {
@@ -136,10 +122,6 @@ export const DonorSearchSection = ({ profileId, stateId }: Props) => {
         );
       }
 
-      // Filter by contacts only if toggled
-      if (showContactsOnly) {
-        filtered = filtered.filter(p => p.isContact);
-      }
 
       setDonors(filtered);
 
@@ -158,8 +140,15 @@ export const DonorSearchSection = ({ profileId, stateId }: Props) => {
   };
 
   // Filter donors by search query
-  const filteredDonors = donors.filter(donor => {
-    if (!searchQuery.trim()) return true;
+  const filteredDonors = donors.filter((donor) => {
+    if (showContactsOnly && !donor.isContact) {
+      return false;
+    }
+
+    if (!searchQuery.trim()) {
+      return true;
+    }
+
     const query = searchQuery.toLowerCase();
     return (
       donor.full_name.toLowerCase().includes(query) ||
@@ -326,6 +315,8 @@ export const DonorSearchSection = ({ profileId, stateId }: Props) => {
             <p className="text-muted-foreground">
               {selectedDistricts.length === 0
                 ? "Select districts and search to find patients"
+                : showContactsOnly
+                ? "No contact matches found. Try disabling Contacts Only or adjusting filters."
                 : "No results found. Try different districts or search terms."}
             </p>
           </div>
